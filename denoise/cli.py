@@ -25,8 +25,12 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.output:
-        with open(args.output, "w", encoding="utf-8") as f:
-            f.write(text)
+        try:
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(text + "\n")
+        except OSError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
     else:
         print(text)
     return 0

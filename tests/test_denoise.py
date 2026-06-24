@@ -44,3 +44,10 @@ def test_scanned_pdf_warns_and_returns_empty(make_pdf):
 def test_missing_file_raises():
     with pytest.raises(FileNotFoundError):
         denoise_pdf("no_such_file.pdf")
+
+
+def test_corrupt_pdf_raises_value_error(tmp_path):
+    bad = tmp_path / "bad.pdf"
+    bad.write_bytes(b"this is not a valid pdf")
+    with pytest.raises(ValueError):
+        denoise_pdf(str(bad))

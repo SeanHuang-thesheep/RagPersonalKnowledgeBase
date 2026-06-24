@@ -21,3 +21,17 @@ def test_cli_missing_file_returns_error(capsys):
     rc = main(["no_such_file.pdf"])
     assert rc == 1
     assert "Error" in capsys.readouterr().err
+
+
+def test_cli_prints_to_stdout(make_pdf, capsys):
+    path = make_pdf([[(50, 400, "Hello stdout")]])
+    rc = main([path])
+    assert rc == 0
+    assert "Hello stdout" in capsys.readouterr().out
+
+
+def test_cli_bad_output_path_returns_error(make_pdf, capsys):
+    path = make_pdf([[(50, 400, "body")]])
+    rc = main([path, "-o", "no_such_dir/out.txt"])
+    assert rc == 1
+    assert "Error" in capsys.readouterr().err

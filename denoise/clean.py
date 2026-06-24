@@ -17,10 +17,10 @@ def denoise_pdf(
 
     try:
         lines, num_pages = extract_lines(pdf_path)
-    except Exception as e:  # 损坏/加密
+    except RuntimeError as e:  # fitz 打开损坏/加密文件时抛 RuntimeError 子类
         raise ValueError(f"Cannot open PDF (corrupt or encrypted?): {pdf_path}") from e
 
-    if num_pages > 0 and not lines:
+    if not lines:
         warnings.warn(
             "No text layer detected; scanned PDFs are not supported (OCR required).",
             UserWarning,
