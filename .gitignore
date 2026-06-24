@@ -1,0 +1,13 @@
+# Spec/design docs — kept locally, not committed (per project preference)
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Output artifacts
+*.out.txt
