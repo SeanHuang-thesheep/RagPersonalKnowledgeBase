@@ -42,10 +42,11 @@ def flag_noise(
     noise: set[int] = set()
     edge_idx = [i for i, ln in enumerate(lines) if _in_edge_zone(ln, edge_ratio)]
 
-    # 规则1：边缘区页码
-    for i in edge_idx:
-        if _is_page_number(lines[i].text):
-            noise.add(i)
+    # 规则1：页码——仅当页码行覆盖足够多页面（文档确实分页）时才删
+    pagenum_idx = [i for i in edge_idx if _is_page_number(lines[i].text)]
+    pagenum_pages = {lines[i].page_no for i in pagenum_idx}
+    if num_pages and len(pagenum_pages) / num_pages >= repeat_threshold:
+        noise.update(pagenum_idx)
 
     # 规则2：跨页重复（仅多页有意义）
     if num_pages > 1:

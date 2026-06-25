@@ -77,3 +77,11 @@ def test_repetition_skipped_for_single_page():
     noise = flag_noise(lines, num_pages=1)
     # 单页：重复检测跳过，仅页码被删
     assert {lines[i].text for i in noise} == {"5"}
+
+
+def test_pagenumbers_kept_when_sparse():
+    # 5 页中仅 2 页在边缘区有裸数字 -> 2/5=0.4 < 0.5 -> 不删（修复 362880 误删）
+    lines = [_edge_bottom(0, "362880"), _edge_bottom(1, "90720")]
+    lines += [_body(p, f"body {p}") for p in range(5)]
+    noise = flag_noise(lines, num_pages=5)
+    assert noise == set()
