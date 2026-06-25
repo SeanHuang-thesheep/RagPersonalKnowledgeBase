@@ -49,3 +49,19 @@ def test_cli_prints_summary_to_stderr(make_pdf, capsys):
     assert "Pages:" in err
     assert "blank:" in err
     assert "removed:" in err
+
+
+def test_cli_md_format_writes_markdown(make_rich_pdf, tmp_path, capsys):
+    path = make_rich_pdf([[
+        ("text", 50, 100, "Heading Big", 24),
+        ("text", 50, 400, "body text with several words here now", 11),
+        ("image", 50, 600, 20, 20),
+    ]])
+    out = str(tmp_path / "out.md")
+    rc = main([path, "-o", out, "--format", "md"])
+    assert rc == 0
+    with open(out, encoding="utf-8") as f:
+        content = f.read()
+    assert "<!-- page 1 -->" in content
+    assert "![](" in content
+    assert "images:" in capsys.readouterr().err
