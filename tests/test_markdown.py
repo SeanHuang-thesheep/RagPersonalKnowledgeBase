@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from denoise.markdown import denoise_pdf_to_markdown, MarkdownResult
@@ -61,3 +63,24 @@ def test_md_scanned_warns(make_rich_pdf):
         result = denoise_pdf_to_markdown(path)
     assert result.markdown == ""
     assert result.blank_pages == [0]
+
+
+def test_image_extracted_and_referenced(make_rich_pdf, tmp_path):
+    path = make_rich_pdf([[
+        ("text", 50, 100, "some intro text with words", 11),
+        ("image", 50, 400, 20, 20),
+    ]])
+    asset_dir = str(tmp_path / "assets")
+    result = denoise_pdf_to_markdown(path, asset_dir=asset_dir)
+    assert result.image_count == 1
+    assert len(result.images) == 1
+    assert os.path.isfile(result.images[0])
+    assert "![](" in result.markdown
+
+
+def test_image_placeholder_without_asset_dir(make_rich_pdf):
+    path = make_rich_pdf([[("image", 50, 400, 20, 20)]])
+    result = denoise_pdf_to_markdown(path)  # asset_dir 为 None
+    assert result.image_count == 1
+    assert result.images == []
+    assert "![](p1_img1." in result.markdown

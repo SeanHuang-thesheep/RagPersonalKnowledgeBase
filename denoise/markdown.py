@@ -87,6 +87,11 @@ def denoise_pdf_to_markdown(
     for bi, b in enumerate(blocks):
         by_page.setdefault(b.page_no, []).append(bi)
 
+    images: list = []
+    image_count = 0
+    if asset_dir:
+        os.makedirs(asset_dir, exist_ok=True)
+
     parts: list = []
     for page_no in range(num_pages):
         parts.append(f"<!-- page {page_no + 1} -->")
@@ -94,14 +99,27 @@ def denoise_pdf_to_markdown(
             by_page.get(page_no, []),
             key=lambda i: (blocks[i].bbox[1], blocks[i].bbox[0]),
         )
+        img_seq = 0
         for bi in bidxs:
             b = blocks[bi]
             if b.kind == "image":
-                continue  # 图片在后续任务处理
+                img_seq += 1
+                image_count += 1
+                fname = f"p{page_no + 1}_img{img_seq}.{b.image_ext or 'png'}"
+                if asset_dir:
+                    fpath = os.path.join(asset_dir, fname)
+                    with open(fpath, "wb") as f:
+                        f.write(b.image_bytes)
+                    images.append(fpath)
+                    ref = fpath.replace("\\", "/")
+                else:
+                    ref = fname
+                parts.append(f"![]({ref})")
+                continue
             kept = [ln.text for li, ln in enumerate(b.lines) if (bi, li) not in noise_pairs]
             if not kept:
                 continue
             parts.append(_heading_prefix(b, base) + " ".join(kept))
 
     markdown = "\n\n".join(parts)
-    return MarkdownResult(markdown, [], num_pages, blank_pages, len(noise_idx), 0)
+    return MarkdownResult(markdown, images, num_pages, blank_pages, len(noise_idx), image_count)
