@@ -35,3 +35,17 @@ def test_cli_bad_output_path_returns_error(make_pdf, capsys):
     rc = main([path, "-o", "no_such_dir/out.txt"])
     assert rc == 1
     assert "Error" in capsys.readouterr().err
+
+
+def test_cli_prints_summary_to_stderr(make_pdf, capsys):
+    pages = [
+        [(50, 30, "ACME Confidential"), (50, 400, "Body line"), (180, 770, "1")],
+        [(50, 30, "ACME Confidential"), (50, 400, "More body"), (180, 770, "2")],
+    ]
+    path = make_pdf(pages)
+    rc = main([path])
+    assert rc == 0
+    err = capsys.readouterr().err
+    assert "Pages:" in err
+    assert "blank:" in err
+    assert "removed:" in err

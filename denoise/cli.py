@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from .clean import denoise_pdf
+from .clean import denoise_pdf_report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -15,7 +15,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        text = denoise_pdf(
+        result = denoise_pdf_report(
             args.input,
             edge_ratio=args.edge_ratio,
             repeat_threshold=args.repeat_threshold,
@@ -24,15 +24,22 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
+    summary = (
+        f"Pages: {result.num_pages} | blank: {len(result.blank_pages)} | "
+        f"raw lines: {result.raw_lines} | removed: {result.removed_lines} | "
+        f"kept: {result.kept_lines}"
+    )
+    print(summary, file=sys.stderr)
+
     if args.output:
         try:
             with open(args.output, "w", encoding="utf-8") as f:
-                f.write(text + "\n")
+                f.write(result.text + "\n")
         except OSError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 1
     else:
-        print(text)
+        print(result.text)
     return 0
 
 

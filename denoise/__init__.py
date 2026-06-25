@@ -1,3 +1,3 @@
-from .clean import denoise_pdf
+from .clean import DenoiseResult, denoise_pdf, denoise_pdf_report
 
-__all__ = ["denoise_pdf"]
+__all__ = ["denoise_pdf", "denoise_pdf_report", "DenoiseResult"]
