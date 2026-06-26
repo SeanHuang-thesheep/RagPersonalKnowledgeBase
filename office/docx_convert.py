@@ -9,6 +9,7 @@ from docx.text.paragraph import Paragraph
 
 from .images import ImageWriter
 from .result import ConvertResult
+from .tables import table_to_markdown
 
 _MATH_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math"
 _DRAWING_BLIP = qn("a:blip")
@@ -53,7 +54,7 @@ def _para_has_math(para) -> bool:
     return para._p.find(f".//{{{_MATH_NS}}}oMath") is not None
 
 
-def _para_image_refs(para, doc, writer) -> list:
+def _para_image_refs(para, doc, writer, counter) -> list:
     refs = []
     for blip in para._p.findall(f".//{_DRAWING_BLIP}"):
         rid = blip.get(_EMBED)
@@ -62,23 +63,11 @@ def _para_image_refs(para, doc, writer) -> list:
         part = doc.part.related_parts.get(rid)
         if part is None:
             continue
-        ext = (part.partname.ext or "png").lstrip(".") if hasattr(part, "partname") else "png"
-        ref = writer.add(part.blob, ext, f"img{len(refs) + writer.count + 1}")
+        ext = part.partname.ext.lstrip(".") if part.partname.ext else "png"
+        counter[0] += 1
+        ref = writer.add(part.blob, ext, f"img{counter[0]}")
         refs.append(f"![]({ref})")
     return refs
-
-
-def _table_md(table) -> str:
-    rows = table.rows
-    if not rows:
-        return ""
-    lines = []
-    header = [c.text.strip() for c in rows[0].cells]
-    lines.append("| " + " | ".join(header) + " |")
-    lines.append("| " + " | ".join(["---"] * len(header)) + " |")
-    for row in rows[1:]:
-        lines.append("| " + " | ".join(c.text.strip() for c in row.cells) + " |")
-    return "\n".join(lines)
 
 
 def docx_to_markdown(path: str, *, asset_dir: str | None = None) -> ConvertResult:
@@ -92,17 +81,18 @@ def docx_to_markdown(path: str, *, asset_dir: str | None = None) -> ConvertResul
     writer = ImageWriter(asset_dir)
     parts: list = []
     unit_count = 0
+    img_counter = [0]
     for block in _iter_block_items(doc):
         unit_count += 1
         if isinstance(block, Table):
-            md = _table_md(block)
+            md = table_to_markdown(block)
             if md:
                 parts.append(md)
             continue
         para = block
         if _para_has_math(para):
             parts.append("[equation]")
-        for ref in _para_image_refs(para, doc, writer):
+        for ref in _para_image_refs(para, doc, writer, img_counter):
             parts.append(ref)
         text = para.text.strip()
         if not text:

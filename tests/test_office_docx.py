@@ -47,3 +47,36 @@ def test_docx_missing_file():
     import pytest
     with pytest.raises(FileNotFoundError):
         docx_to_markdown("nope.docx")
+
+
+def test_docx_equation_placeholder(tmp_path):
+    from docx.oxml import parse_xml
+    doc = Document()
+    para = doc.add_paragraph("")
+    omath = parse_xml(
+        '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">'
+        '<m:r><m:t>x</m:t></m:r></m:oMath>'
+    )
+    para._p.append(omath)
+    p = str(tmp_path / "eq.docx")
+    doc.save(p)
+    md = docx_to_markdown(p).markdown
+    assert "[equation]" in md
+
+
+def test_docx_two_distinct_images(tmp_path):
+    def _png(color):
+        pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 3, 3))
+        pix.set_rect(pix.irect, color)
+        return pix.tobytes("png")
+
+    doc = Document()
+    doc.add_paragraph("first")
+    doc.add_picture(io.BytesIO(_png((10, 20, 30))))
+    doc.add_paragraph("second")
+    doc.add_picture(io.BytesIO(_png((200, 100, 50))))
+    p = str(tmp_path / "imgs.docx")
+    doc.save(p)
+    result = docx_to_markdown(p, asset_dir=str(tmp_path / "assets"))
+    assert result.image_count == 2
+    assert len(set(result.images)) == 2   # 两个不同文件，无撞名覆盖

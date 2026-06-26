@@ -5,21 +5,9 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from .images import ImageWriter
 from .result import ConvertResult
+from .tables import table_to_markdown
 
 _MATH_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math"
-
-
-def _table_md(table) -> str:
-    rows = list(table.rows)
-    if not rows:
-        return ""
-    lines = []
-    header = [c.text.strip() for c in rows[0].cells]
-    lines.append("| " + " | ".join(header) + " |")
-    lines.append("| " + " | ".join(["---"] * len(header)) + " |")
-    for row in rows[1:]:
-        lines.append("| " + " | ".join(c.text.strip() for c in row.cells) + " |")
-    return "\n".join(lines)
 
 
 def _shape_has_math(shape) -> bool:
@@ -44,7 +32,7 @@ def _render_shape(shape, title_shape, parts, writer, slide_idx, counters):
         parts.append(f"![]({ref})")
         return
     if shape.has_table:
-        md = _table_md(shape.table)
+        md = table_to_markdown(shape.table)
         if md:
             parts.append(md)
         return

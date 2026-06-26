@@ -53,3 +53,13 @@ def test_cli_bad_extension_returns_error(tmp_path, capsys):
     rc = main([p])
     assert rc == 1
     assert "Error" in capsys.readouterr().err
+
+
+def test_cli_stdout(tmp_path, capsys):
+    p = str(tmp_path / "d.docx")
+    _docx(p)
+    rc = main([p])
+    assert rc == 0
+    out = capsys.readouterr()
+    assert "# Hello Doc" in out.out
+    assert "Format:" in out.err
