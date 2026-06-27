@@ -1,17 +1,20 @@
-# RAG Personal Knowledge Base — 文档转换管线
+# RAG Personal Knowledge Base — 文档转换与增强管线
 
-把 **PDF / Word / PowerPoint** 转换成干净的文本或 Markdown，作为 RAG 知识库的输入处理。
+把 **PDF / Word / PowerPoint** 转换成干净的文本或 Markdown，并为其中的图片生成描述，作为 RAG 知识库的入库处理。
 
-| 输入 | 模块 | 输出 |
+| 阶段 | 模块 | 作用 |
 |---|---|---|
-| `.pdf`（文字版） | `denoise` | 去噪纯文本 / 结构化 Markdown |
-| `.docx` / `.pptx` | `office` | 结构化 Markdown |
+| 解析 / 去噪 | `denoise` | 文字版 PDF → 去噪纯文本 / 结构化 Markdown |
+| 解析 | `office` | `.docx` / `.pptx` → 结构化 Markdown |
+| 内容增强 | `caption` | 为 Markdown 中的图片生成描述，填入 alt（OpenAI 视觉） |
+
+入库管线：`PDF/docx/pptx → (denoise/office) Markdown+图片 → (caption) 图片描述填入 → 待分块 / 向量化 / 索引`。
 
 ## 安装
 ```
 python -m pip install -r requirements.txt
 ```
-依赖：PyMuPDF、python-docx、python-pptx、pytest。
+依赖：PyMuPDF、python-docx、python-pptx、openai、Pillow、pytest。
 
 ---
 
@@ -65,12 +68,38 @@ result = convert_to_markdown("deck.pptx", asset_dir="assets")  # 按扩展名分
 
 ---
 
+## 图片 Caption 增强（`caption`）
+
+吃已产出的 Markdown + 其 `_assets/` 图片，用 OpenAI 视觉模型（`gpt-4o-mini`）为图片生成描述、填入空 alt 槽，输出 `<名>.captioned.md`，让图片内容进入纯文本检索。
+
+**CLI:**
+```
+# 需先设置环境变量 OPENAI_API_KEY
+python -m caption.cli doc.md -o doc.captioned.md
+```
+
+**作为库:**
+```python
+from caption import caption_markdown
+
+result = caption_markdown("doc.md")   # 默认 OpenAI 客户端 -> CaptionResult
+```
+
+要点：
+- 把图片所在 page/slide 区块的邻近文本一并发给模型，caption 更贴语境；`language` 可配，`auto` 随文档语言。
+- 按尺寸/比例过滤装饰小图；同一图片去重，只调一次 API。
+- 单图失败隔离（缺图 / API 异常 → 计入 `failed`、保留空 alt，不中断整轮）。
+- 只处理空 alt `![]()`，重跑幂等。
+
+---
+
 ## 测试
 ```
 python -m pytest
 ```
+（`caption` 的测试默认全程 mock，不联网、不产生 API 费用。）
 
 ## 路线图（已规划，未实现）
 - PDF 数学公式识别（几何启发式 / 视觉模型）
 - Office OMML 公式线性化
-- 图片的 LLM 识别 / caption（图片已抽取并留有空 alt 槽）
+- 分块 + 向量化 + 向量库（入库管线第 4–6 步）
