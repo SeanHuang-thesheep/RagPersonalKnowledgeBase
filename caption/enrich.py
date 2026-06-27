@@ -17,7 +17,7 @@ class CaptionResult:
 
 
 def _clean(text: str) -> str:
-    return " ".join(text.replace("]", " ").split())
+    return " ".join(text.replace("[", r"\[").replace("]", r"\]").split())
 
 
 def _resolve_local(path: str, asset_dir: str, md_path: str):
@@ -30,6 +30,7 @@ def _resolve_local(path: str, asset_dir: str, md_path: str):
     ):
         if os.path.isfile(cand):
             return os.path.abspath(cand)
+    # 都不存在：返回 asset_dir 下同名路径（不存在），让 _process 计为 failed
     return os.path.join(asset_dir, os.path.basename(path))
 
 
@@ -82,7 +83,8 @@ def caption_markdown(
         if not os.path.isfile(local):
             stats["failed"] += 1
             return
-        data = open(local, "rb").read()
+        with open(local, "rb") as f:
+            data = f.read()
         if not should_caption(data, min_side=min_side, max_ratio=max_ratio):
             stats["skipped"] += 1
             return

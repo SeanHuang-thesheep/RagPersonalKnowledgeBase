@@ -100,3 +100,13 @@ def test_language_passed(tmp_path):
 def test_missing_md_raises():
     with pytest.raises(FileNotFoundError):
         caption_markdown("nope.md", client=FakeClient())
+
+
+def test_caption_escapes_brackets(tmp_path):
+    md_text = "![](doc_assets/img1.png)\n"
+    md = _setup(tmp_path, md_text, {"img1.png": _png()})
+    client = FakeClient("a [x] chart")
+    result = caption_markdown(md, client=client)
+    out = open(result.output_path, encoding="utf-8").read()
+    assert "](doc_assets/img1.png)" in out      # 链接未被破坏
+    assert result.captioned == 1

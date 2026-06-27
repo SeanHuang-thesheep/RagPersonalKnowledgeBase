@@ -12,6 +12,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-o", "--output", help="输出 .md（默认 <名>.captioned.md）")
     parser.add_argument("--language", default="auto", help="caption 语言；auto=随周边文字")
     parser.add_argument("--min-side", type=int, default=64, help="过滤：最小边像素")
+    parser.add_argument("--max-ratio", type=float, default=20.0, help="过滤：最大长宽比")
     args = parser.parse_args(argv)
 
     try:
@@ -20,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
             language=args.language,
             min_side=args.min_side,
+            max_ratio=args.max_ratio,
         )
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)

@@ -1,5 +1,19 @@
 import base64
+import io
 from typing import Protocol
+
+
+def _image_mime(image_bytes: bytes) -> str:
+    try:
+        from PIL import Image
+
+        with Image.open(io.BytesIO(image_bytes)) as im:
+            fmt = (im.format or "PNG").lower()
+    except Exception:
+        fmt = "png"
+    if fmt == "jpg":
+        fmt = "jpeg"
+    return f"image/{fmt}"
 
 
 class CaptionClient(Protocol):
@@ -30,6 +44,7 @@ class OpenAICaptionClient:
 
     def caption(self, image_bytes: bytes, context_text: str, language: str) -> str:
         b64 = base64.b64encode(image_bytes).decode("ascii")
+        mime = _image_mime(image_bytes)
         prompt = _PROMPT.format(lang=_lang_clause(language), ctx=context_text or "(none)")
         resp = self._client.chat.completions.create(
             model=self._model,
@@ -41,7 +56,7 @@ class OpenAICaptionClient:
                         {"type": "text", "text": prompt},
                         {
                             "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{b64}"},
+                            "image_url": {"url": f"data:{mime};base64,{b64}"},
                         },
                     ],
                 }

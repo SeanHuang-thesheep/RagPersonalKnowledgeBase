@@ -52,3 +52,16 @@ def test_caption_builds_request_and_strips():
     img_parts = [p for p in content if p["type"] == "image_url"]
     assert "revenue 2020-2024" in text_parts[0]["text"]
     assert img_parts[0]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def test_caption_jpeg_mime():
+    import fitz
+
+    pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 8, 8))
+    pix.set_rect(pix.irect, (1, 2, 3))
+    jpg = pix.tobytes("jpg")
+    fake = _FakeOpenAI()
+    c = OpenAICaptionClient(_client=fake)
+    c.caption(jpg, "ctx", "auto")
+    url = fake.chat.completions.last["messages"][0]["content"][1]["image_url"]["url"]
+    assert url.startswith("data:image/jpeg;base64,")
