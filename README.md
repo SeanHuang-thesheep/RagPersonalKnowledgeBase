@@ -63,7 +63,7 @@ result = convert_to_markdown("deck.pptx", asset_dir="assets")  # 按扩展名分
 
 要点：
 - 图片抽取为文件 + `![]()` 引用，并按内容哈希**去重**（重复 logo 只存一份）。
-- 公式（OMML）本期不解析，但检测到即输出 `[equation]` 占位，不静默丢失。
+- 公式（OMML）线性化为内联记法并用 `$...$` 包裹（上下标 `x^2`/`x_n`、分数 `(a)/(b)`、矩阵 `[(a,b),(c,d)]`、`sqrt`/积分/求和等）；线性化约定可用 `python -m office.cli --math-rules` 打印，写进检索用的 tool description。
 - 仅支持现代格式 `.docx` / `.pptx`。
 
 ---
@@ -101,5 +101,4 @@ python -m pytest
 
 ## 路线图（已规划，未实现）
 - PDF 数学公式识别（几何启发式 / 视觉模型）
-- Office OMML 公式线性化
 - 分块 + 向量化 + 向量库（入库管线第 4–6 步）
