@@ -8,6 +8,7 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 
 from .images import ImageWriter
+from .omml import linearize_math_in
 from .result import ConvertResult
 from .tables import table_to_markdown
 
@@ -90,7 +91,11 @@ def docx_to_markdown(path: str, *, asset_dir: str | None = None) -> ConvertResul
                 parts.append(md)
             continue
         para = block
-        if _para_has_math(para):
+        math_parts = linearize_math_in(para._p)
+        if math_parts:
+            for m in math_parts:
+                parts.append(f"${m}$" if m else "[equation]")
+        elif _para_has_math(para):
             parts.append("[equation]")
         for ref in _para_image_refs(para, doc, writer, img_counter):
             parts.append(ref)
