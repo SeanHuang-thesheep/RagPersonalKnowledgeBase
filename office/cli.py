@@ -3,15 +3,24 @@ import os
 import sys
 
 from .convert import convert_to_markdown
+from .omml import MATH_NOTATION_RULES
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="将 docx/pptx 转换为 Markdown。"
     )
-    parser.add_argument("input", help="输入 .docx 或 .pptx 路径")
+    parser.add_argument("input", nargs="?", help="输入 .docx 或 .pptx 路径")
+    parser.add_argument("--math-rules", action="store_true", help="打印数学线性化约定后退出")
     parser.add_argument("-o", "--output", help="输出 .md 文件（默认打印到 stdout）")
     args = parser.parse_args(argv)
+
+    if args.math_rules:
+        print(MATH_NOTATION_RULES)
+        return 0
+    if not args.input:
+        print("Error: input file required", file=sys.stderr)
+        return 1
 
     if args.output:
         asset_dir = os.path.splitext(args.output)[0] + "_assets"
