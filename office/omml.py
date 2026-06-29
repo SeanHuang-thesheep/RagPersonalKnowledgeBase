@@ -35,7 +35,7 @@ def _child(el, name):
 
 
 def _wrap(s: str) -> str:
-    return s if len(s) == 1 else f"({s})"
+    return s if len(s) <= 1 else f"({s})"
 
 
 def _part(el, name) -> str:

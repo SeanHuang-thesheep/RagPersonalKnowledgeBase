@@ -96,3 +96,37 @@ def test_linearize_math_in_finds_all():
 def test_rules_nonempty():
     assert "[(" in MATH_NOTATION_RULES
     assert "sqrt" in MATH_NOTATION_RULES
+
+
+def test_delimiter_default_paren_multi():
+    inner = f"<m:d><m:e>{_run('a')}</m:e><m:e>{_run('b')}</m:e></m:d>"
+    assert omath_to_text(_omath(inner)) == "(a,b)"
+
+
+def test_delimiter_custom_brackets():
+    pr = '<m:dPr><m:begChr m:val="["/><m:endChr m:val="]"/></m:dPr>'
+    inner = f"<m:d>{pr}<m:e>{_run('x')}</m:e></m:d>"
+    assert omath_to_text(_omath(inner)) == "[x]"
+
+
+def test_accent_bar():
+    inner = f'<m:acc><m:accPr><m:chr m:val="̄"/></m:accPr><m:e>{_run("x")}</m:e></m:acc>'
+    assert omath_to_text(_omath(inner)) == "bar(x)"
+
+
+def test_accent_hat():
+    inner = f'<m:acc><m:accPr><m:chr m:val="̂"/></m:accPr><m:e>{_run("y")}</m:e></m:acc>'
+    assert omath_to_text(_omath(inner)) == "hat(y)"
+
+
+def test_bar_element():
+    inner = f"<m:bar><m:e>{_run('z')}</m:e></m:bar>"
+    assert omath_to_text(_omath(inner)) == "bar(z)"
+
+
+def test_empty_superscript_no_empty_parens():
+    # degenerate: sup element is empty -> should not produce (), base superscript degrades to empty
+    inner = f"<m:sSup><m:e>{_run('x')}</m:e><m:sup></m:sup></m:sSup>"
+    out = omath_to_text(_omath(inner))
+    assert "()" not in out
+    assert out.startswith("x^")
