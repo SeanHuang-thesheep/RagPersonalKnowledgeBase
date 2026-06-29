@@ -61,7 +61,7 @@ def test_docx_equation_placeholder(tmp_path):
     p = str(tmp_path / "eq.docx")
     doc.save(p)
     md = docx_to_markdown(p).markdown
-    assert "[equation]" in md
+    assert "$x$" in md
 
 
 def test_docx_two_distinct_images(tmp_path):
@@ -80,3 +80,30 @@ def test_docx_two_distinct_images(tmp_path):
     result = docx_to_markdown(p, asset_dir=str(tmp_path / "assets"))
     assert result.image_count == 2
     assert len(set(result.images)) == 2   # 两个不同文件，无撞名覆盖
+
+
+def test_docx_omml_linearized(tmp_path):
+    from docx import Document
+    from docx.oxml import parse_xml
+
+    M = "http://schemas.openxmlformats.org/officeDocument/2006/math"
+    doc = Document()
+    para = doc.add_paragraph("")
+    omath = parse_xml(
+        f'<m:oMath xmlns:m="{M}">'
+        f'<m:f><m:num><m:r><m:t>dy</m:t></m:r></m:num>'
+        f'<m:den><m:r><m:t>dt</m:t></m:r></m:den></m:f>'
+        f'<m:r><m:t> + </m:t></m:r>'
+        f'<m:sSup><m:e><m:r><m:t>y</m:t></m:r></m:e>'
+        f'<m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>'
+        f'<m:r><m:t> = 0</m:t></m:r>'
+        f'</m:oMath>'
+    )
+    para._p.append(omath)
+    p = str(tmp_path / "eq.docx")
+    doc.save(p)
+
+    from office.docx_convert import docx_to_markdown
+    md = docx_to_markdown(p).markdown
+    assert "$(dy)/(dt) + y^2 = 0$" in md
+    assert "[equation]" not in md

@@ -63,3 +63,11 @@ def test_cli_stdout(tmp_path, capsys):
     out = capsys.readouterr()
     assert "# Hello Doc" in out.out
     assert "Format:" in out.err
+
+
+def test_cli_math_rules(capsys):
+    from office.cli import main
+    rc = main(["--math-rules"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "[(" in out and "sqrt" in out

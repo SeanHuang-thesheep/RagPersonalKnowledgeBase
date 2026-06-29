@@ -4,6 +4,7 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from .images import ImageWriter
+from .omml import linearize_math_in
 from .result import ConvertResult
 from .tables import table_to_markdown
 
@@ -37,7 +38,11 @@ def _render_shape(shape, title_shape, parts, writer, slide_idx, counters):
             parts.append(md)
         return
     if shape.has_text_frame:
-        if _shape_has_math(shape):
+        math_parts = linearize_math_in(shape.text_frame._txBody)
+        if math_parts:
+            for m in math_parts:
+                parts.append(f"${m}$" if m else "[equation]")
+        elif _shape_has_math(shape):
             parts.append("[equation]")
         for para in shape.text_frame.paragraphs:
             text = para.text.strip()
