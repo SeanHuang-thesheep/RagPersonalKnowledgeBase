@@ -5,10 +5,11 @@
 | 阶段 | 模块 | 作用 |
 |---|---|---|
 | 解析 / 去噪 | `denoise` | 文字版 PDF → 去噪纯文本 / 结构化 Markdown |
-| 解析 | `office` | `.docx` / `.pptx` → 结构化 Markdown |
+| 解析 | `office` | `.docx` / `.pptx` → 结构化 Markdown（含 OMML 公式线性化） |
 | 内容增强 | `caption` | 为 Markdown 中的图片生成描述，填入 alt（OpenAI 视觉） |
+| 内容增强 | `pdfmath` | 把 PDF 渲染出的 `![math]` 公式图转写为线性式 `$...$`（OpenAI 视觉） |
 
-入库管线：`PDF/docx/pptx → (denoise/office) Markdown+图片 → (caption) 图片描述填入 → 待分块 / 向量化 / 索引`。
+入库管线：`PDF/docx/pptx → (denoise/office) Markdown+图片 → (caption/pdfmath) 图片描述+公式填入 → 待分块 / 向量化 / 索引`。
 
 ## 安装
 ```
@@ -93,12 +94,34 @@ result = caption_markdown("doc.md")   # 默认 OpenAI 客户端 -> CaptionResult
 
 ---
 
+## PDF 公式识别（`pdfmath`）
+
+PDF 里的数学是二维散落字形，直接抽取会碎裂（`y²`→`y2`、`dy/dt` 拆行）。两段式处理：
+
+1. **denoise 端**（开 `math_mode=True`）：用几何信号（上标 flag / 小字号 / 数学符号 / 分数线）在块级检测数学，把数学块**渲染成图**，在 markdown 原位输出 `![math](...)`，跳过乱码文本。
+2. **pdfmath 端**：把这些 `![math]` 图用视觉模型按 office 的 `MATH_NOTATION_RULES` 约定转写为 `$线性式$`。
+
+```python
+from denoise import denoise_pdf_to_markdown
+denoise_pdf_to_markdown("book.pdf", asset_dir="assets", math_mode=True)  # 产出含 ![math]
+```
+```
+# 需先设置环境变量 OPENAI_API_KEY
+python -m pdfmath.cli book.md -o book.math.md
+```
+
+要点：
+- `math_mode` 默认关闭，开启才渲染数学块（向后兼容、零额外开销）。
+- 块级检测是启发式：误判只多一次视觉调用，漏判则该公式仍保留为原文本。
+- 标记隔离：`pdfmath` 只认 `![math]`，`caption` 只填空 alt `![]()`，互不干扰、可任意顺序跑。
+
+---
+
 ## 测试
 ```
 python -m pytest
 ```
-（`caption` 的测试默认全程 mock，不联网、不产生 API 费用。）
+（`caption` / `pdfmath` 的测试默认全程 mock，不联网、不产生 API 费用。）
 
 ## 路线图（已规划，未实现）
-- PDF 数学公式识别（几何启发式 / 视觉模型）
 - 分块 + 向量化 + 向量库（入库管线第 4–6 步）
