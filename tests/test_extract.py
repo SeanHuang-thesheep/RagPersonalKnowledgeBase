@@ -92,7 +92,9 @@ def test_extract_blocks_renders_math(tmp_path):
     import fitz
     doc = fitz.open()
     page = doc.new_page(width=400, height=800)
-    page.insert_text((50, 400), "∫ x dx", fontsize=14)
+    page.insert_text((60, 395), "dy", fontsize=12)
+    page.draw_line((58, 400), (80, 400))
+    page.insert_text((60, 412), "dt", fontsize=12)
     p = str(tmp_path / "m.pdf")
     doc.save(p); doc.close()
     blocks, _ = extract_blocks(p, render_math=True)
@@ -106,7 +108,9 @@ def test_extract_blocks_no_render_by_default(tmp_path):
     import fitz
     doc = fitz.open()
     page = doc.new_page(width=400, height=800)
-    page.insert_text((50, 400), "∫ x dx", fontsize=14)
+    page.insert_text((60, 395), "dy", fontsize=12)
+    page.draw_line((58, 400), (80, 400))
+    page.insert_text((60, 412), "dt", fontsize=12)
     p = str(tmp_path / "m.pdf")
     doc.save(p); doc.close()
     blocks, _ = extract_blocks(p)

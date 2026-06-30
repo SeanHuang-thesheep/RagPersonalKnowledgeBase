@@ -36,7 +36,7 @@ class Block:
     math_ext: str | None = None
 
 
-MATH_SYMBOLS = set("∫∑∏√∞≤≥≠≈±×÷→←↔∂∇∈∉⊂⊆∀∃αβγδεζηθλμνξπρστφχψω·")
+MATH_SYMBOLS = set("∫∑∏√∞≤≥≠≈±×÷→←↔∂∇∈∉⊂⊆∀∃αβγδεζηθλμνξπρστφχψω")
 
 
 def _h_segments(page):
