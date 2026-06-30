@@ -43,6 +43,7 @@ def test_fills_math_marker(tmp_path):
     assert "$(dy)/(dt) + y^2 = 0$" in out
     assert "![math](" not in out
     assert "[(" in client.calls[0]
+    assert "$" not in client.calls[0]
 
 
 def test_dedup(tmp_path):

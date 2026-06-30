@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 from office import MATH_NOTATION_RULES
 
+# math 转写不要 $ 包裹（本模块自己包裹），剥掉规则里关于 $ 的那行
+_MATH_RULES = "\n".join(l for l in MATH_NOTATION_RULES.splitlines() if "$" not in l)
+
 _MATH_RE = re.compile(r"!\[math\]\(([^)]+)\)")
 
 
@@ -28,7 +31,7 @@ def _resolve_local(path: str, asset_dir: str, md_path: str):
     return os.path.join(asset_dir, os.path.basename(path))
 
 
-def math_fill_markdown(md_path, *, output_path=None, asset_dir=None, client=None, language="auto") -> MathFillResult:
+def math_fill_markdown(md_path, *, output_path=None, asset_dir=None, client=None) -> MathFillResult:
     if not os.path.isfile(md_path):
         raise FileNotFoundError(f"Markdown not found: {md_path}")
     stem = os.path.splitext(md_path)[0]
@@ -57,7 +60,7 @@ def math_fill_markdown(md_path, *, output_path=None, asset_dir=None, client=None
         with open(local, "rb") as f:
             data = f.read()
         try:
-            out = _get_client().transcribe(data, MATH_NOTATION_RULES)
+            out = _get_client().transcribe(data, _MATH_RULES)
         except Exception:
             stats["failed"] += 1
             return

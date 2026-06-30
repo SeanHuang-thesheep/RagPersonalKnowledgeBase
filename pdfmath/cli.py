@@ -10,11 +10,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("input", help="输入 .md 路径（数学图在 <名>_assets/）")
     parser.add_argument("-o", "--output", help="输出 .md（默认 <名>.math.md）")
-    parser.add_argument("--language", default="auto")
     args = parser.parse_args(argv)
 
     try:
-        result = math_fill_markdown(args.input, output_path=args.output, language=args.language)
+        result = math_fill_markdown(args.input, output_path=args.output)
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
