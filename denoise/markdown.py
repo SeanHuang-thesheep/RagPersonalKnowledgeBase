@@ -49,11 +49,12 @@ def denoise_pdf_to_markdown(
     asset_dir: str | None = None,
     edge_ratio: float = 0.12,
     repeat_threshold: float = 0.5,
+    math_mode: bool = False,
 ) -> MarkdownResult:
     if not os.path.isfile(pdf_path):
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
     try:
-        blocks, num_pages = extract_blocks(pdf_path)
+        blocks, num_pages = extract_blocks(pdf_path, render_math=math_mode)
     except RuntimeError as e:
         raise ValueError(f"Cannot open PDF (corrupt or encrypted?): {pdf_path}") from e
 
@@ -102,6 +103,20 @@ def denoise_pdf_to_markdown(
         img_seq = 0
         for bi in bidxs:
             b = blocks[bi]
+            if math_mode and getattr(b, "is_math", False) and b.math_png:
+                img_seq += 1
+                fname = f"p{page_no + 1}_math{img_seq}.{b.math_ext or 'png'}"
+                if asset_dir:
+                    fpath = os.path.join(asset_dir, fname)
+                    with open(fpath, "wb") as f:
+                        f.write(b.math_png)
+                    images.append(fpath)
+                    ref = fpath.replace("\\", "/")
+                else:
+                    ref = fname
+                image_count += 1
+                parts.append(f"![math]({ref})")
+                continue
             if b.kind == "image":
                 img_seq += 1
                 image_count += 1

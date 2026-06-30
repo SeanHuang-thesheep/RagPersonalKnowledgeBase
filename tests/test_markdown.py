@@ -84,3 +84,33 @@ def test_image_placeholder_without_asset_dir(make_rich_pdf):
     assert result.image_count == 1
     assert result.images == []
     assert "![](p1_img1." in result.markdown
+
+
+def test_math_mode_emits_math_marker(tmp_path):
+    import fitz
+    doc = fitz.open()
+    page = doc.new_page(width=400, height=800)
+    page.insert_text((50, 200), "ordinary intro paragraph text here", fontsize=12)
+    # 画一条分数线 + 上下文本，触发数学检测（不依赖特殊字体字形）
+    page.insert_text((60, 395), "dy", fontsize=12)
+    page.draw_line((58, 400), (80, 400))
+    page.insert_text((60, 412), "dt", fontsize=12)
+    p = str(tmp_path / "m.pdf")
+    doc.save(p); doc.close()
+    from denoise.markdown import denoise_pdf_to_markdown
+    res = denoise_pdf_to_markdown(p, asset_dir=str(tmp_path / "assets"), math_mode=True)
+    assert "![math](" in res.markdown
+
+
+def test_math_mode_off_no_marker(tmp_path):
+    import fitz
+    doc = fitz.open()
+    page = doc.new_page(width=400, height=800)
+    page.insert_text((60, 395), "dy", fontsize=12)
+    page.draw_line((58, 400), (80, 400))
+    page.insert_text((60, 412), "dt", fontsize=12)
+    p = str(tmp_path / "m.pdf")
+    doc.save(p); doc.close()
+    from denoise.markdown import denoise_pdf_to_markdown
+    res = denoise_pdf_to_markdown(p, asset_dir=str(tmp_path / "assets"))  # math_mode default False
+    assert "![math](" not in res.markdown
